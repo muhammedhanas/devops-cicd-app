@@ -66,27 +66,26 @@ pipeline {
 			}
 		}
 
-        stage('Upload Artifact to Nexus') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'nexus-credentials',
-                        usernameVariable: 'NEXUS_USER',
-                        passwordVariable: 'NEXUS_PASSWORD'
-                    )
-                ]) {
-                    sh '''
-                        echo "===== NEXUS UPLOAD ====="
+		stage('Upload Artifact to Nexus') {
+			steps {
+				withCredentials([
+					usernamePassword(
+						credentialsId: 'nexus-credentials',
+						usernameVariable: 'NEXUS_USER',
+						passwordVariable: 'NEXUS_PASSWORD'
+					)
+				]) {
+					sh '''
+						echo "===== NEXUS UPLOAD ====="
 
-                        curl --fail \
-                          -u "$NEXUS_USER:$NEXUS_PASSWORD" \
-                          --upload-file target/devops-cicd-app-1.0.0.jar \
-                          "$NEXUS_URL/repository/maven-releases/com/devops/devops-cicd-app/1.0.0/devops-cicd-app-1.0.0.jar"
-                    '''
-                }
-            }
-        }
-
+						curl --fail \
+						  -u "$NEXUS_USER:$NEXUS_PASSWORD" \
+						  --upload-file target/devops-cicd-app-1.0.0.jar \
+						  "$NEXUS_URL/repository/maven-releases/com/devops/devops-cicd-app/1.0.${BUILD_NUMBER}/devops-cicd-app-1.0.${BUILD_NUMBER}.jar"
+					'''
+				}
+			}
+		}
         stage('Docker Build') {
             steps {
                 sh '''
