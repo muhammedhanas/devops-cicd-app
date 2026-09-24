@@ -36,56 +36,57 @@ pipeline {
             }
         }
 
-		stage('SonarQube Analysis') {
-			steps {
-				withSonarQubeEnv('sonarqube') {
-					withCredentials([
-						string(
-							credentialsId: 'sonar-token',
-							variable: 'SONAR_TOKEN'
-						)
-					]) {
-						sh '''
-							echo "===== SONARQUBE ANALYSIS ====="
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    withCredentials([
+                        string(
+                            credentialsId: 'sonar-token',
+                            variable: 'SONAR_TOKEN'
+                        )
+                    ]) {
+                        sh '''
+                            echo "===== SONARQUBE ANALYSIS ====="
 
-							docker cp . maven:/workspace/
+                            docker cp . maven:/workspace/
 
-							docker exec \
-							  -e SONAR_HOST_URL="$SONAR_HOST_URL" \
-							  -e SONAR_TOKEN="$SONAR_TOKEN" \
-							  -w /workspace \
-							  maven \
-							  mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
-							  -Dsonar.host.url="$SONAR_HOST_URL" \
-							  -Dsonar.login="$SONAR_TOKEN" \
-							  -Dsonar.projectKey=devops-cicd-app \
-							  -Dsonar.projectName=devops-cicd-app
-						'''
-					}
-				}
-			}
-		}
+                            docker exec \
+                              -e SONAR_HOST_URL="$SONAR_HOST_URL" \
+                              -e SONAR_TOKEN="$SONAR_TOKEN" \
+                              -w /workspace \
+                              maven \
+                              mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
+                              -Dsonar.host.url="$SONAR_HOST_URL" \
+                              -Dsonar.login="$SONAR_TOKEN" \
+                              -Dsonar.projectKey=devops-cicd-app \
+                              -Dsonar.projectName=devops-cicd-app
+                        '''
+                    }
+                }
+            }
+        }
 
-		stage('Upload Artifact to Nexus') {
-			steps {
-				withCredentials([
-					usernamePassword(
-						credentialsId: 'nexus-credentials',
-						usernameVariable: 'NEXUS_USER',
-						passwordVariable: 'NEXUS_PASSWORD'
-					)
-				]) {
-					sh '''
-						echo "===== NEXUS UPLOAD ====="
+        stage('Upload Artifact to Nexus') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'nexus-credentials',
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "===== NEXUS UPLOAD ====="
 
-						curl --fail \
-						  -u "$NEXUS_USER:$NEXUS_PASSWORD" \
-						  --upload-file target/devops-cicd-app-1.0.0.jar \
-						  "$NEXUS_URL/repository/maven-releases/com/devops/devops-cicd-app/1.0.${BUILD_NUMBER}/devops-cicd-app-1.0.${BUILD_NUMBER}.jar"
-					'''
-				}
-			}
-		}
+                        curl --fail \
+                          -u "$NEXUS_USER:$NEXUS_PASSWORD" \
+                          --upload-file target/devops-cicd-app-1.0.0.jar \
+                          "$NEXUS_URL/repository/maven-releases/com/devops/devops-cicd-app/1.0.${BUILD_NUMBER}/devops-cicd-app-1.0.${BUILD_NUMBER}.jar"
+                    '''
+                }
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 sh '''
@@ -134,31 +135,32 @@ pipeline {
             }
         }
 
-		stage('Deploy to KinD') {
-			steps {
-				sh '''
-					echo "===== DEPLOY TO KIND ====="
+        stage('Deploy to KinD') {
+            steps {
+                sh '''
+                    echo "===== DEPLOY TO KIND ====="
 
-					kubectl apply \
-					  -n dev \
-					  -f k8s/deployment.yaml
+                    kubectl apply \
+                      -n dev \
+                      -f k8s/deployment.yaml
 
-					KIND_IMAGE="docker-registry:5000/$APP_NAME:${BUILD_NUMBER}"
+                    KIND_IMAGE="docker-registry:5000/$APP_NAME:${BUILD_NUMBER}"
 
-					kubectl set image \
-					  deployment/devops-cicd-app \
-					  devops-cicd-app="$KIND_IMAGE" \
-					  -n dev
+                    kubectl set image \
+                      deployment/devops-cicd-app \
+                      devops-cicd-app="$KIND_IMAGE" \
+                      -n dev
 
-					kubectl rollout status \
-					  deployment/devops-cicd-app \
-					  -n dev \
-					  --timeout=120s
+                    kubectl rollout status \
+                      deployment/devops-cicd-app \
+                      -n dev \
+                      --timeout=120s
 
-					kubectl get pods -n dev -o wide
-				'''
-			}
-		}
+                    kubectl get pods -n dev -o wide
+                '''
+            }
+        }
+    }
 
     post {
         success {
