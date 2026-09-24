@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         APP_NAME   = 'devops-cicd-app'
-        REGISTRY   = 'docker-registry:5000'
+        REGISTRY = 'localhost:5000'
         IMAGE      = "${REGISTRY}/${APP_NAME}:${BUILD_NUMBER}"
         NEXUS_URL  = 'http://nexus:8081'
     }
@@ -134,32 +134,31 @@ pipeline {
             }
         }
 
-        stage('Deploy to KinD') {
-            steps {
-                sh '''
-                    echo "===== DEPLOY TO KIND ====="
+		stage('Deploy to KinD') {
+			steps {
+				sh '''
+					echo "===== DEPLOY TO KIND ====="
 
-                    kubectl apply \
-                      -n dev \
-                      -f k8s/deployment.yaml
+					kubectl apply \
+					  -n dev \
+					  -f k8s/deployment.yaml
 
-                    kubectl set image \
-                      deployment/devops-cicd-app \
-                      devops-cicd-app="$IMAGE" \
-                      -n dev
+					KIND_IMAGE="docker-registry:5000/$APP_NAME:${BUILD_NUMBER}"
 
-                    kubectl rollout status \
-                      deployment/devops-cicd-app \
-                      -n dev \
-                      --timeout=120s
+					kubectl set image \
+					  deployment/devops-cicd-app \
+					  devops-cicd-app="$KIND_IMAGE" \
+					  -n dev
 
-                    echo "===== DEPLOYMENT STATUS ====="
+					kubectl rollout status \
+					  deployment/devops-cicd-app \
+					  -n dev \
+					  --timeout=120s
 
-                    kubectl get pods -n dev -o wide
-                '''
-            }
-        }
-    }
+					kubectl get pods -n dev -o wide
+				'''
+			}
+		}
 
     post {
         success {
