@@ -36,33 +36,35 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonarqube') {
-                    withCredentials([
-                        string(
-                            credentialsId: 'sonar-token',
-                            variable: 'SONAR_TOKEN'
-                        )
-                    ]) {
-                        sh '''
-                            echo "===== SONARQUBE ANALYSIS ====="
+		stage('SonarQube Analysis') {
+			steps {
+				withSonarQubeEnv('sonarqube') {
+					withCredentials([
+						string(
+							credentialsId: 'sonar-token',
+							variable: 'SONAR_TOKEN'
+						)
+					]) {
+						sh '''
+							echo "===== SONARQUBE ANALYSIS ====="
 
-                            docker cp . maven:/workspace/
+							docker cp . maven:/workspace/
 
-                            docker exec \
-                              -e SONAR_HOST_URL="$SONAR_HOST_URL" \
-                              -e SONAR_TOKEN="$SONAR_TOKEN" \
-                              -w /workspace \
-                              maven \
-                              mvn sonar:sonar \
-                              -Dsonar.host.url="$SONAR_HOST_URL" \
-                              -Dsonar.token="$SONAR_TOKEN"
-                        '''
-                    }
-                }
-            }
-        }
+							docker exec \
+							  -e SONAR_HOST_URL="$SONAR_HOST_URL" \
+							  -e SONAR_TOKEN="$SONAR_TOKEN" \
+							  -w /workspace \
+							  maven \
+							  mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
+							  -Dsonar.host.url="$SONAR_HOST_URL" \
+							  -Dsonar.login="$SONAR_TOKEN" \
+							  -Dsonar.projectKey=devops-cicd-app \
+							  -Dsonar.projectName=devops-cicd-app
+						'''
+					}
+				}
+			}
+		}
 
         stage('Upload Artifact to Nexus') {
             steps {
